@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Separator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin-top: 50px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .btn-upload {
+            background: #ff9800;
+            color: white;
+            font-size: 18px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+        .btn-upload:hover {
+            background: #e68900;
+        }
+        #loading {
+            display: none;
+            margin-top: 15px;
+        }
+        .result-box {
+            margin-top: 20px;
+            display: none;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        .btn-download {
+            display: block;
+            margin-top: 10px;
+            background: #4caf50;
+            color: white;
+            padding: 12px;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+        .btn-download:hover {
+            background: #388e3c;
+        }
+        .audio-box {
+            margin-top: 15px;
+            text-align: left;
+        }
+        audio {
+            width: 100%;
+            margin-top: 5px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Tách Giọng Hát & Nhạc Nền</h1>
+        <p>Chọn file âm thanh của bạn để tách giọng hát và nhạc nền.</p>
+        
+        <input type="file" id="audio_file" accept=".mp3, .wav" class="form-control">
+        <button class="btn-upload mt-3" onclick="uploadFile()">📤 Tải lên & Xử lý</button>
+        
+        <div id="loading">
+            <p>⏳ Đang xử lý, vui lòng chờ...</p>
+            <div class="progress">
+                <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 10%;"></div>
+            </div>
+        </div>
+
+        <div id="result" class="result-box">
+            <h2>✅ Kết quả:</h2>
+
+            <div class="audio-box">
+                <h4>🎤 Giọng Hát:</h4>
+                <audio id="vocal_audio" controls></audio>
+                <a id="vocal_link" class="btn-download" download>⬇️ Tải Giọng Hát</a>
+            </div>
+
+            <div class="audio-box">
+                <h4>🎼 Nhạc Nền:</h4>
+                <audio id="music_audio" controls></audio>
+                <a id="music_link" class="btn-download" download>⬇️ Tải Nhạc Nền</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function uploadFile() {
+            let fileInput = document.getElementById("audio_file");
+            if (fileInput.files.length === 0) {
+                alert("⚠️ Vui lòng chọn một file âm thanh!");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("audio_file", fileInput.files[0]);
+
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("result").style.display = "none";
+            let progressBar = document.getElementById("progress-bar");
+
+            try {
+                let response = await fetch("/upload", { 
+                    method: "POST", 
+                    body: formData,
+                    onUploadProgress: function(progressEvent) {
+                        let percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        progressBar.style.width = percent + "%";
+                    }
+                });
+
+                let result = await response.json();
+
+                document.getElementById("loading").style.display = "none";
+
+                if (result.vocal && result.music) {
+                    // Hiển thị link tải xuống
+                    document.getElementById("vocal_link").href = result.vocal;
+                    document.getElementById("music_link").href = result.music;
+
+                    // Cập nhật audio để phát trực tiếp
+                    document.getElementById("vocal_audio").src = result.vocal;
+                    document.getElementById("music_audio").src = result.music;
+
+                    // Hiển thị kết quả
+                    document.getElementById("result").style.display = "block";
+                } else {
+                    alert("❌ Xử lý thất bại! Hãy thử lại.");
+                }
+            } catch (error) {
+                document.getElementById("loading").style.display = "none";
+                alert("❌ Lỗi khi tải lên, vui lòng thử lại!");
+            }
+        }
+    </script>
+</body>
+</html>

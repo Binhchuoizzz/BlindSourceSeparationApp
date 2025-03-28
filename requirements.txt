@@ -1,0 +1,10 @@
+Flask
+uuid
+librosa
+scipy
+soundfile
+pydub
+wave
+numpy
+fastapi
+uvicorn
