@@ -140,7 +140,7 @@
         <form id="uploadForm" enctype="multipart/form-data">
             <input type="file" id="audioFile" accept=".wav, .mp3" required onchange="previewAudio()">
             <br>
-            <audio id="originalAudio" controls style="display:none; margin-top: 10px;"></audio>
+            <audio id="originalAudio" controls style="display:none; margin-top: 10px; padding-left: 150px;"></audio>
             <br>
             <button type="button" onclick="uploadAudio('bss')">🎶 Tách Giọng Hát & Nhạc</button>
             <button type="button" onclick="uploadAudio('denoise')">🔊 Lọc Nhiễu Giọng Nói</button>
@@ -149,8 +149,8 @@
         <h2>Hoặc Ghi Âm Trực Tiếp</h2>
         <button id="startRecording">🎙️ Bắt đầu ghi</button>
         <button id="stopRecording" disabled>⏹️ Dừng</button>
-        <audio id="recordedAudio" controls style="display:none; margin-top: 10px;"></audio>
-        <button id="uploadRecording" style="display:none;">📤 Upload ghi âm</button>
+        <audio id="recordedAudio" controls style="display:none; margin-top: 10px; padding-left: 150px;"></audio>
+        <button id="uploadRecording" style="display:none; margin-top: 10px; padding-left: 150px;">📤 Upload ghi âm</button>
         <p class="loading" id="loading">Đang xử lý...</p>
         <div id="result" class="result-container">
             <h2>Kết Quả</h2>
