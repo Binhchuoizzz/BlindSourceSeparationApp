@@ -8,3 +8,16 @@ wave
 numpy
 fastapi
 uvicorn
+
+
+#librosa: Xử lý âm thanh, trích xuất đặc trưng tín hiệu.
+
+#numpy: Xử lý dữ liệu số học.
+
+#soundfile: Đọc và ghi file âm thanh .wav.
+
+#scipy: Cung cấp bộ lọc tín hiệu (high-pass, low-pass).
+
+#scikit-learn: Chứa FastICA để tách nguồn độc lập.
+
+#pywavelets: Dùng để lọc nhiễu bằng Wavelet Transform.
