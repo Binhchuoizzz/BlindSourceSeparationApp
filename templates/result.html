@@ -5,32 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Processing Result</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        body {
+            background: linear-gradient(-45deg, #1e1e2f, #3b3b98, #6a0572, #ff0066);
+            background-size: 400% 400%;
+            animation: gradientAnimation 10s ease infinite;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.2);
+            text-align: center;
+            max-width: 500px;
+        }
+        .btn-download {
+            background: #ff0066;
+            border: none;
+            transition: all 0.3s;
+        }
+        .btn-download:hover {
+            background: #ff3385;
+            transform: translateY(-3px);
+            box-shadow: 0px 5px 15px rgba(255, 255, 255, 0.3);
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h2 class="text-center">Processing Result</h2>
+    <div class="container">
+        <h2>Processing Result</h2>
+        <p>Your processed audio files are ready.</p>
         
         <div class="mt-4">
             <h4>Processed Audio Files</h4>
             <div class="mb-3">
                 <label><strong>First Audio File:</strong></label>
-                <audio controls>
+                <audio controls class="w-100">
                     <source src="{{ audio1_url }}" type="audio/wav">
                     Your browser does not support the audio element.
                 </audio>
-                <a href="{{ audio1_url }}" class="btn btn-primary btn-sm" download>Download</a>
+                <a href="{{ audio1_url }}" class="btn btn-download mt-2" download>Download</a>
             </div>
             
             <div class="mb-3">
                 <label><strong>Second Audio File:</strong></label>
-                <audio controls>
+                <audio controls class="w-100">
                     <source src="{{ audio2_url }}" type="audio/wav">
                     Your browser does not support the audio element.
                 </audio>
-                <a href="{{ audio2_url }}" class="btn btn-primary btn-sm" download>Download</a>
+                <a href="{{ audio2_url }}" class="btn btn-download mt-2" download>Download</a>
             </div>
         </div>
-
+        
         <a href="/" class="btn btn-secondary mt-3">Go Back</a>
     </div>
 </body>
