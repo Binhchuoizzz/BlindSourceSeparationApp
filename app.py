@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, jsonify
 import os
 import uuid
-from processing import process_audio
+from processing import process_audio, denoise_audio
 
 app = Flask(__name__)
 
@@ -17,28 +17,32 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'audio_file' not in request.files:
-        return "No file uploaded", 400
+        return {"error": "No file uploaded"}, 400
 
     file = request.files['audio_file']
-    
-    if file.filename == '':
-        return "No selected file", 400
+    mode = request.form.get("mode")
 
-    # Lưu file upload
+    if file.filename == '':
+        return {"error": "No selected file"}, 400
+
     file_ext = os.path.splitext(file.filename)[-1]
     file_id = str(uuid.uuid4())
     input_path = os.path.join(UPLOAD_FOLDER, f"{file_id}{file_ext}")
 
     file.save(input_path)
 
-    # Định nghĩa output files
     output_vocal = os.path.join(OUTPUT_FOLDER, f"{file_id}_vocals.wav")
     output_music = os.path.join(OUTPUT_FOLDER, f"{file_id}_music.wav")
 
-    # Xử lý tách giọng hát và nhạc nền
-    process_audio(input_path, output_vocal, output_music)
+    if mode == "bss":
+        process_audio(input_path, output_vocal, output_music)
+    elif mode == "denoise":
+        denoise_audio(input_path, output_vocal, output_music)
+    else:
+        return {"error": "Invalid mode"}, 400
 
     return {"vocal": f"/download/{file_id}_vocals.wav", "music": f"/download/{file_id}_music.wav"}
+
 
 @app.route('/download/<filename>')
 def download_file(filename):

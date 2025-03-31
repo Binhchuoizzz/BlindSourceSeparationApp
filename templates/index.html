@@ -3,156 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Separator</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <title>Blind Source Separation App</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            font-family: 'Arial', sans-serif;
-            color: white;
+            font-family: 'Poppins', sans-serif;
             text-align: center;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e1e2f, #3b3b98);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            transition: background 0.5s ease-in-out;
         }
         .container {
+            width: 80%;
             max-width: 600px;
-            margin-top: 50px;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
             border-radius: 15px;
-            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
+            transition: all 0.3s;
         }
-        h1 {
-            font-weight: bold;
-            margin-bottom: 10px;
+        .container:hover {
+            transform: scale(1.02);
+            box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.2);
         }
-        .btn-upload {
-            background: #ff9800;
-            color: white;
-            font-size: 18px;
-            padding: 12px 20px;
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
             border: none;
-            border-radius: 8px;
-            transition: 0.3s;
-        }
-        .btn-upload:hover {
-            background: #e68900;
-        }
-        #loading {
-            display: none;
-            margin-top: 15px;
-        }
-        .result-box {
-            margin-top: 20px;
-            display: none;
-            animation: fadeIn 0.8s ease-in-out;
-        }
-        .btn-download {
-            display: block;
-            margin-top: 10px;
-            background: #4caf50;
+            font-size: 20px;
+            cursor: pointer;
             color: white;
-            padding: 12px;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: 0.3s;
         }
-        .btn-download:hover {
-            background: #388e3c;
+        input[type="file"] {
+            margin: 15px 0;
         }
-        .audio-box {
-            margin-top: 15px;
-            text-align: left;
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            transition: transform 0.2s, box-shadow 0.3s;
         }
-        audio {
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0px 5px 15px rgba(255, 255, 255, 0.3);
+        }
+        .result-container {
+            display: none;
+            margin-top: 20px;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+            font-size: 18px;
+            animation: fade 1s infinite alternate;
+        }
+        @keyframes fade {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
+        }
+        .ads-container {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 120px;
+            text-align: center;
+        }
+        .left-ad {
+            left: 20px;
+        }
+        .right-ad {
+            right: 20px;
+        }
+        .ad-banner {
             width: 100%;
-            margin-top: 5px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .ad-banner:hover {
+            transform: scale(1.1) rotate(3deg);
+        }
+        footer {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
         }
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    <div class="ads-container left-ad">
+        <img src="ad-left.jpg" class="ad-banner" alt="Ad Left">
+    </div>
     <div class="container">
-        <h1>🎵 Tách Giọng Hát & Nhạc Nền</h1>
-        <p>Chọn file âm thanh của bạn để tách giọng hát và nhạc nền.</p>
-        
-        <input type="file" id="audio_file" accept=".mp3, .wav" class="form-control">
-        <button class="btn-upload mt-3" onclick="uploadFile()">📤 Tải lên & Xử lý</button>
-        
-        <div id="loading">
-            <p>⏳ Đang xử lý, vui lòng chờ...</p>
-            <div class="progress">
-                <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 10%;"></div>
-            </div>
-        </div>
-
-        <div id="result" class="result-box">
-            <h2>✅ Kết quả:</h2>
-
-            <div class="audio-box">
-                <h4>🎤 Giọng Hát:</h4>
-                <audio id="vocal_audio" controls></audio>
-                <a id="vocal_link" class="btn-download" download>⬇️ Tải Giọng Hát</a>
-            </div>
-
-            <div class="audio-box">
-                <h4>🎼 Nhạc Nền:</h4>
-                <audio id="music_audio" controls></audio>
-                <a id="music_link" class="btn-download" download>⬇️ Tải Nhạc Nền</a>
-            </div>
+        <h1>Ứng dụng Tách Âm Thanh</h1>
+        <p>Chọn file âm thanh và chọn phương pháp xử lý</p>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="audioFile" accept=".wav, .mp3" required onchange="previewAudio()">
+            <br>
+            <audio id="originalAudio" controls style="display:none; margin-top: 10px;"></audio>
+            <br>
+            <button type="button" onclick="uploadAudio('bss')">🎶 Tách Giọng Hát & Nhạc</button>
+            <button type="button" onclick="uploadAudio('denoise')">🔊 Lọc Nhiễu Giọng Nói</button>
+        </form>
+        <p class="loading" id="loading">Đang xử lý...</p>
+        <div id="result" class="result-container">
+            <h2>Kết Quả</h2>
+            <p><strong>Giọng hát / Giọng nói:</strong></p>
+            <audio id="vocalAudio" controls></audio>
+            <p><strong>Nhạc nền / Nhiễu:</strong></p>
+            <audio id="musicAudio" controls></audio>
         </div>
     </div>
-
+    <div class="ads-container right-ad">
+        <img src="ad-right.jpg" class="ad-banner" alt="Ad Right">
+    </div>
+    <footer>
+        <p>Thông tin dự án: Ứng dụng tách âm thanh bằng Blind Source Separation</p>
+        <p>Teacher: Phan Duy Hùng</p>
+    </footer>
     <script>
-        async function uploadFile() {
-            let fileInput = document.getElementById("audio_file");
-            if (fileInput.files.length === 0) {
-                alert("⚠️ Vui lòng chọn một file âm thanh!");
+        function previewAudio() {
+            let fileInput = document.getElementById("audioFile");
+            let audioPlayer = document.getElementById("originalAudio");
+            if (fileInput.files.length > 0) {
+                let fileURL = URL.createObjectURL(fileInput.files[0]);
+                audioPlayer.src = fileURL;
+                audioPlayer.style.display = "block";
+            }
+        }
+
+        function uploadAudio(mode) {
+            let fileInput = document.getElementById("audioFile");
+            if (!fileInput.files.length) {
+                alert("Vui lòng chọn file âm thanh!");
                 return;
             }
-
+            document.getElementById("loading").style.display = "block";
             let formData = new FormData();
             formData.append("audio_file", fileInput.files[0]);
-
-            document.getElementById("loading").style.display = "block";
-            document.getElementById("result").style.display = "none";
-            let progressBar = document.getElementById("progress-bar");
-
-            try {
-                let response = await fetch("/upload", { 
-                    method: "POST", 
-                    body: formData,
-                    onUploadProgress: function(progressEvent) {
-                        let percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                        progressBar.style.width = percent + "%";
-                    }
-                });
-
-                let result = await response.json();
-
+            formData.append("mode", mode);
+            fetch("/upload", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
                 document.getElementById("loading").style.display = "none";
-
-                if (result.vocal && result.music) {
-                    // Hiển thị link tải xuống
-                    document.getElementById("vocal_link").href = result.vocal;
-                    document.getElementById("music_link").href = result.music;
-
-                    // Cập nhật audio để phát trực tiếp
-                    document.getElementById("vocal_audio").src = result.vocal;
-                    document.getElementById("music_audio").src = result.music;
-
-                    // Hiển thị kết quả
-                    document.getElementById("result").style.display = "block";
+                if (data.error) {
+                    alert("Lỗi: " + data.error);
                 } else {
-                    alert("❌ Xử lý thất bại! Hãy thử lại.");
+                    document.getElementById("vocalAudio").src = data.vocal;
+                    document.getElementById("musicAudio").src = data.music;
+                    document.getElementById("result").style.display = "block";
                 }
-            } catch (error) {
-                document.getElementById("loading").style.display = "none";
-                alert("❌ Lỗi khi tải lên, vui lòng thử lại!");
-            }
+            })
+            .catch(error => console.error("Lỗi:", error));
         }
     </script>
 </body>

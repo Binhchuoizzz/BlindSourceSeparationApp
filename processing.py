@@ -3,6 +3,7 @@ import numpy as np
 import soundfile as sf
 import scipy.signal as signal
 import pywt
+import noisereduce as nr
 from sklearn.decomposition import FastICA
 
 def high_pass_filter(audio, sr, cutoff=150):
@@ -15,72 +16,90 @@ def low_pass_filter(audio, sr, cutoff=6000):
     sos = signal.butter(6, cutoff, btype='lowpass', fs=sr, output='sos')
     return signal.sosfilt(sos, audio)
 
-def separate_hpss(audio, sr, n_fft=2048, hop_length=512, margin=1.5):
-    """Tách giọng hát và nhạc nền bằng HPSS (cải thiện)."""
-    stft_audio = librosa.stft(audio, n_fft=n_fft, hop_length=hop_length)
-    harmonic, percussive = librosa.decompose.hpss(stft_audio, margin=margin)
-    
-    vocal_audio = librosa.istft(harmonic, hop_length=hop_length)
-    music_audio = librosa.istft(percussive, hop_length=hop_length)
+def separate_hpss(audio, sr, margin_vocal=2.0, margin_music=1.2):
+    """Tách giọng hát và nhạc nền bằng HPSS với margin tùy chỉnh."""
+    stft_audio = librosa.stft(audio)
+    harmonic, percussive = librosa.decompose.hpss(stft_audio, margin=(margin_vocal, margin_music))
+    return librosa.istft(harmonic), librosa.istft(percussive)
 
-    return vocal_audio, music_audio
-
-def apply_ica(vocal_audio, music_audio, sr):
+def apply_ica(vocal_audio, music_audio):
     """Áp dụng ICA để tối ưu phân tách giọng hát và nhạc nền."""
-    X = np.c_[vocal_audio, music_audio]  # Ghép tín hiệu thành ma trận nguồn
+    X = np.c_[vocal_audio, music_audio]
     ica = FastICA(n_components=2, max_iter=1000)
-    sources = ica.fit_transform(X)  # Tách các nguồn độc lập
+    sources = ica.fit_transform(X)
+    return sources[:, 0], sources[:, 1]
 
-    # Xác định nguồn nào là giọng hát bằng phân tích phổ tần số
-    def dominant_frequency(signal, sr):
-        fft_spectrum = np.abs(np.fft.rfft(signal))
-        freqs = np.fft.rfftfreq(len(signal), d=1/sr)
-        return np.sum(freqs * fft_spectrum) / np.sum(fft_spectrum)  # Trọng số phổ
-
-    freq1 = dominant_frequency(sources[:, 0], sr)
-    freq2 = dominant_frequency(sources[:, 1], sr)
-
-    # Giọng hát thường có tần số trọng tâm từ 300Hz - 4000Hz
-    if 300 <= freq1 <= 4000:
-        return sources[:, 0], sources[:, 1]  # Vocal - Music
-    else:
-        return sources[:, 1], sources[:, 0]  # Hoán đổi nếu cần
+def spectral_masking(vocal, music):
+    """Giảm nhạc nền còn lẫn trong giọng hát bằng Spectral Masking."""
+    vocal_stft = librosa.stft(vocal)
+    music_stft = librosa.stft(music)
+    mask = np.abs(vocal_stft) > np.abs(music_stft)
+    enhanced_vocal = librosa.istft(vocal_stft * mask)
+    return enhanced_vocal
 
 def wavelet_denoise(audio, wavelet="db6", level=3):
     """Lọc nhiễu tín hiệu bằng Wavelet Transform."""
     coeffs = pywt.wavedec(audio, wavelet, level=level)
-    threshold = np.median(np.abs(coeffs[-level])) / 0.6745  # Tính ngưỡng
+    threshold = np.median(np.abs(coeffs[-level])) / 0.6745
     coeffs_denoised = [pywt.threshold(c, threshold, mode="soft") for c in coeffs]
     return pywt.waverec(coeffs_denoised, wavelet)
+
+def reduce_noise(audio, sr):
+    """Giảm nhiễu nền bằng Spectral Gating từ thư viện noisereduce."""
+    return nr.reduce_noise(y=audio, sr=sr, stationary=True)
+
+def adaptive_noise_subtraction(clean, noise):
+    """Lọc nhiễu thích ứng bằng cách trừ tín hiệu nhiễu."""
+    noise = librosa.effects.time_stretch(noise, rate=1.1)  # Điều chỉnh độ dài noise
+    noise = np.pad(noise, (0, max(0, len(clean) - len(noise))), mode='constant')
+    return clean - noise[:len(clean)]
+
+def denoise_audio(input_path, output_voice, output_noise):
+    """Lọc nhiễu từ file âm thanh hội thoại, xuất ra file giọng nói sạch và nhiễu nền."""
+    audio, sr = librosa.load(input_path, sr=None, mono=True)
+
+    # Lọc nhiễu
+    reduced_noise = reduce_noise(audio, sr)
+    reduced_noise = wavelet_denoise(reduced_noise)
+    reduced_noise = high_pass_filter(reduced_noise, sr)
+
+    # Lấy phần nhiễu
+    noise_only = adaptive_noise_subtraction(audio, reduced_noise)
+
+    # Lưu file kết quả
+    sf.write(output_voice, reduced_noise, sr)
+    sf.write(output_noise, noise_only, sr)
+
+    return output_voice, output_noise
 
 def normalize_audio(audio):
     """Chuẩn hóa âm lượng."""
     return audio / (np.max(np.abs(audio)) + 1e-7)
 
-def process_audio(input_path, output_vocal, output_music):
-    """Tách giọng hát và nhạc nền kết hợp HPSS + ICA + Wavelet Transform."""
+def process_audio(input_path, output_vocal, output_music, mode="separate_music"):
+    """Xử lý tách giọng hát/nhạc hoặc lọc nhiễu giọng nói."""
     audio, sr = librosa.load(input_path, sr=None, mono=True)
-
-    # Bước 1: HPSS tách sơ bộ
-    vocal, music = separate_hpss(audio, sr)
-
-    # 🔥 Sửa lỗi: Truyền thêm `sr` vào `apply_ica()`
-    vocal_ica, music_ica = apply_ica(vocal, music, sr)
-
-    # Bước 3: Lọc tạp âm bằng Wavelet Transform
-    vocal_clean = wavelet_denoise(vocal_ica)
-    music_clean = wavelet_denoise(music_ica)
-
-    # Bước 4: Lọc High-Pass và Low-Pass
-    vocal_clean = high_pass_filter(vocal_clean, sr)
-    vocal_clean = low_pass_filter(vocal_clean, sr)
-
-    # Bước 5: Chuẩn hóa tín hiệu
-    vocal_clean = normalize_audio(vocal_clean)
-    music_clean = normalize_audio(music_clean)
-
-    # Lưu file đầu ra
-    sf.write(output_vocal, vocal_clean, sr)
-    sf.write(output_music, music_clean, sr)
-
-    return output_vocal, output_music
+    
+    if mode == "separate_music":
+        # Tách giọng hát và nhạc nền
+        vocal, music = separate_hpss(audio, sr)
+        vocal, music = apply_ica(vocal, music)
+        vocal = spectral_masking(vocal, music)
+        vocal, music = wavelet_denoise(vocal), wavelet_denoise(music)
+        vocal, music = high_pass_filter(vocal, sr), low_pass_filter(music, sr)
+    
+    elif mode == "denoise_speech":
+        # Lọc nhiễu giọng nói
+        vocal = reduce_noise(audio, sr)
+        vocal = wavelet_denoise(vocal)
+        vocal = high_pass_filter(vocal, sr)
+        music = None  # Không có nhạc nền trong chế độ này
+    
+    # Chuẩn hóa và lưu file
+    vocal = normalize_audio(vocal)
+    sf.write(output_vocal, vocal, sr)
+    if music is not None:
+        music = normalize_audio(music)
+        sf.write(output_music, music, sr)
+    
+    return output_vocal, output_music if music is not None else None

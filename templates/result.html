@@ -1,103 +1,37 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kết Quả Tách Âm Thanh</title>
+    <title>Processing Result</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            font-family: 'Arial', sans-serif;
-            color: white;
-            text-align: center;
-        }
-        .container {
-            max-width: 600px;
-            margin-top: 50px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-        }
-        h2 {
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        .audio-box {
-            margin-top: 20px;
-            background: rgba(255, 255, 255, 0.3);
-            padding: 15px;
-            border-radius: 10px;
-        }
-        .btn-download, .btn-control {
-            display: inline-block;
-            margin-top: 10px;
-            background: #ff9800;
-            color: white;
-            padding: 10px 15px;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: 0.3s;
-            border: none;
-        }
-        .btn-download:hover, .btn-control:hover {
-            background: #e68900;
-        }
-        .btn-home {
-            display: inline-block;
-            margin-top: 20px;
-            background: #4caf50;
-            color: white;
-            padding: 12px;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: 0.3s;
-        }
-        .btn-home:hover {
-            background: #388e3c;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>🎶 Kết Quả Tách Âm Thanh</h2>
-
-        <div class="audio-box">
-            <h4>🎤 Giọng Hát:</h4>
-            <audio id="vocal_audio" controls autoplay>
-                <source src="{{ vocal_file }}" type="audio/wav">
-                Trình duyệt của bạn không hỗ trợ phát audio.
-            </audio>
-            <br>
-            <button class="btn-control" onclick="toggleAudio('vocal_audio')">⏸️ Dừng</button>
-            <a href="{{ url_for('download_file', filename=vocal_file) }}" class="btn-download" download>⬇️ Tải Giọng Hát</a>
+    <div class="container mt-5">
+        <h2 class="text-center">Processing Result</h2>
+        
+        <div class="mt-4">
+            <h4>Processed Audio Files</h4>
+            <div class="mb-3">
+                <label><strong>First Audio File:</strong></label>
+                <audio controls>
+                    <source src="{{ audio1_url }}" type="audio/wav">
+                    Your browser does not support the audio element.
+                </audio>
+                <a href="{{ audio1_url }}" class="btn btn-primary btn-sm" download>Download</a>
+            </div>
+            
+            <div class="mb-3">
+                <label><strong>Second Audio File:</strong></label>
+                <audio controls>
+                    <source src="{{ audio2_url }}" type="audio/wav">
+                    Your browser does not support the audio element.
+                </audio>
+                <a href="{{ audio2_url }}" class="btn btn-primary btn-sm" download>Download</a>
+            </div>
         </div>
 
-        <div class="audio-box">
-            <h4>🎼 Nhạc Nền:</h4>
-            <audio id="music_audio" controls autoplay>
-                <source src="{{ music_file }}" type="audio/wav">
-                Trình duyệt của bạn không hỗ trợ phát audio.
-            </audio>
-            <br>
-            <button class="btn-control" onclick="toggleAudio('music_audio')">⏸️ Dừng</button>
-            <a href="{{ url_for('download_file', filename=music_file) }}" class="btn-download" download>⬇️ Tải Nhạc Nền</a>
-        </div>
-
-        <a href="/" class="btn-home">🔄 Tải Lên File Mới</a>
+        <a href="/" class="btn btn-secondary mt-3">Go Back</a>
     </div>
-
-    <script>
-        function toggleAudio(id) {
-            let audio = document.getElementById(id);
-            if (audio.paused) {
-                audio.play();
-            } else {
-                audio.pause();
-            }
-        }
-    </script>
 </body>
 </html>
