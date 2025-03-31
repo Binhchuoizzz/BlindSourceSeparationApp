@@ -144,7 +144,13 @@
             <br>
             <button type="button" onclick="uploadAudio('bss')">🎶 Tách Giọng Hát & Nhạc</button>
             <button type="button" onclick="uploadAudio('denoise')">🔊 Lọc Nhiễu Giọng Nói</button>
+        
         </form>
+        <h2>Hoặc Ghi Âm Trực Tiếp</h2>
+        <button id="startRecording">🎙️ Bắt đầu ghi</button>
+        <button id="stopRecording" disabled>⏹️ Dừng</button>
+        <audio id="recordedAudio" controls style="display:none; margin-top: 10px;"></audio>
+        <button id="uploadRecording" style="display:none;">📤 Upload ghi âm</button>
         <p class="loading" id="loading">Đang xử lý...</p>
         <div id="result" class="result-container">
             <h2>Kết Quả</h2>
@@ -162,6 +168,63 @@
         <p>Teacher: Phan Duy Hùng</p>
     </footer>
     <script>
+        let mediaRecorder;
+let recordedChunks = [];
+
+document.getElementById("startRecording").addEventListener("click", () => {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = event => recordedChunks.push(event.data);
+            mediaRecorder.onstop = saveRecording;
+            mediaRecorder.start();
+            
+            document.getElementById("startRecording").disabled = true;
+            document.getElementById("stopRecording").disabled = false;
+        })
+        .catch(error => console.error("Lỗi ghi âm:", error));
+});
+
+document.getElementById("stopRecording").addEventListener("click", () => {
+    mediaRecorder.stop();
+    document.getElementById("startRecording").disabled = false;
+    document.getElementById("stopRecording").disabled = true;
+});
+
+function saveRecording() {
+    let audioBlob = new Blob(recordedChunks, { type: "audio/wav" });
+    let audioURL = URL.createObjectURL(audioBlob);
+    
+    let recordedAudio = document.getElementById("recordedAudio");
+    recordedAudio.src = audioURL;
+    recordedAudio.style.display = "block";
+
+    document.getElementById("uploadRecording").style.display = "block";
+    document.getElementById("uploadRecording").addEventListener("click", () => uploadRecordedAudio(audioBlob));
+}
+
+function uploadRecordedAudio(audioBlob) {
+    let formData = new FormData();
+    formData.append("audio_file", audioBlob, "recording.wav");
+    formData.append("mode", "bss");
+
+    fetch("/upload", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert("Lỗi: " + data.error);
+        } else {
+            document.getElementById("vocalAudio").src = data.vocal;
+            document.getElementById("musicAudio").src = data.music;
+            document.getElementById("result").style.display = "block";
+        }
+    })
+    .catch(error => console.error("Lỗi:", error));
+}
+
         function previewAudio() {
             let fileInput = document.getElementById("audioFile");
             let audioPlayer = document.getElementById("originalAudio");
