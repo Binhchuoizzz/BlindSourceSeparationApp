@@ -1,7 +1,8 @@
-flask
 librosa
 numpy
 soundfile
 scipy
+PyWavelets
+noisereduce
 scikit-learn
-pywavelets
+#pip install -r requirements.txt
