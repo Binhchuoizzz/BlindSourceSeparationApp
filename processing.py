@@ -4,7 +4,6 @@ import soundfile as sf
 import scipy.signal as signal
 import pywt
 import noisereduce as nr
-from sklearn.decomposition import FastICA
 
 def high_pass_filter(audio, sr, cutoff=150):
     """Lọc High-Pass để loại bỏ nhiễu tần số thấp."""
@@ -21,21 +20,6 @@ def separate_hpss(audio, sr, margin_vocal=2.0, margin_music=1.2):
     stft_audio = librosa.stft(audio)
     harmonic, percussive = librosa.decompose.hpss(stft_audio, margin=(margin_vocal, margin_music))
     return librosa.istft(harmonic), librosa.istft(percussive)
-
-def apply_ica(vocal_audio, music_audio):
-    """Áp dụng ICA để tối ưu phân tách giọng hát và nhạc nền."""
-    X = np.c_[vocal_audio, music_audio]
-    ica = FastICA(n_components=2, max_iter=1000)
-    sources = ica.fit_transform(X)
-    return sources[:, 0], sources[:, 1]
-
-def spectral_masking(vocal, music):
-    """Giảm nhạc nền còn lẫn trong giọng hát bằng Spectral Masking."""
-    vocal_stft = librosa.stft(vocal)
-    music_stft = librosa.stft(music)
-    mask = np.abs(vocal_stft) > np.abs(music_stft)
-    enhanced_vocal = librosa.istft(vocal_stft * mask)
-    return enhanced_vocal
 
 def wavelet_denoise(audio, wavelet="db6", level=3):
     """Lọc nhiễu tín hiệu bằng Wavelet Transform."""
@@ -83,8 +67,6 @@ def process_audio(input_path, output_vocal, output_music, mode="separate_music")
     if mode == "separate_music":
         # Tách giọng hát và nhạc nền
         vocal, music = separate_hpss(audio, sr)
-        vocal, music = apply_ica(vocal, music)
-        vocal = spectral_masking(vocal, music)
         vocal, music = wavelet_denoise(vocal), wavelet_denoise(music)
         vocal, music = high_pass_filter(vocal, sr), low_pass_filter(music, sr)
     
