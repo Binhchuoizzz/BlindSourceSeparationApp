@@ -5,4 +5,5 @@ scipy
 PyWavelets
 noisereduce
 scikit-learn
+flask
 #pip install -r requirements.txt
